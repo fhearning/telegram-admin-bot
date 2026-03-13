@@ -2,10 +2,10 @@ const TelegramBot = require("node-telegram-bot-api");
 const admin = require("firebase-admin");
 
 // Telegram bot token
-const token = "8373169221:AAF-S1LiNMD4WLplJPj0d5BNSYaXBlzD9uA";
+const token = "YOUR_BOT_TOKEN";
 
 // Admin chat id
-const ADMIN_CHAT_ID = "6807603208";
+const ADMIN_CHAT_ID = "YOUR_ADMIN_CHAT_ID";
 
 // Firebase key
 const serviceAccount = require("./serviceAccountKey.json");
@@ -22,16 +22,16 @@ console.log("Bot running...");
 
 
 // ================= ORDER DETECT =================
-db.collection("orders")
+setInterval(async () => {
+
+const snapshot = await db.collection("orders")
 .where("status","==","pending")
-.onSnapshot((snapshot)=>{
+.get();
 
-snapshot.docChanges().forEach((change)=>{
+snapshot.forEach((doc)=>{
 
-if(change.type==="added"){
-
-const data = change.doc.data();
-const orderId = change.doc.id;
+const data = doc.data();
+const orderId = doc.id;
 
 bot.sendMessage(
 ADMIN_CHAT_ID,
@@ -55,24 +55,23 @@ inline_keyboard:[
 }
 );
 
-}
-
 });
 
-});
+},5000);
+
 
 
 // ================= DEPOSIT DETECT =================
-db.collection("deposits")
+setInterval(async () => {
+
+const snapshot = await db.collection("deposits")
 .where("status","==","pending")
-.onSnapshot((snapshot)=>{
+.get();
 
-snapshot.docChanges().forEach((change)=>{
+snapshot.forEach((doc)=>{
 
-if(change.type==="added"){
-
-const data = change.doc.data();
-const depId = change.doc.id;
+const data = doc.data();
+const depId = doc.id;
 
 bot.sendMessage(
 ADMIN_CHAT_ID,
@@ -95,11 +94,10 @@ inline_keyboard:[
 }
 );
 
-}
-
 });
 
-});
+},5000);
+
 
 
 // ================= BUTTON HANDLE =================
