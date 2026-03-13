@@ -21,163 +21,25 @@ const bot = new TelegramBot(token, { polling: true });
 console.log("Bot running...");
 
 
-// ---------- ORDER DETECT ----------
+// ================= ORDER DETECT =================
 db.collection("orders")
-.where("status", "==", "pending")
-.onSnapshot((snapshot) => {
+.where("status","==","pending")
+.onSnapshot((snapshot)=>{
 
-  snapshot.docChanges().forEach(async (change) => {
+snapshot.docChanges().forEach((change)=>{
 
-    if (change.type === "added") {
+if(change.type==="added"){
 
-      const data = change.doc.data();
-      const orderId = change.doc.id;
+const data = change.doc.data();
+const orderId = change.doc.id;
 
-      bot.sendMessage(
-        ADMIN_CHAT_ID,
+bot.sendMessage(
+ADMIN_CHAT_ID,
+
 `📦 NEW ORDER
 
 User: ${data.userName}
 Player ID: ${data.playerId}
-Product: ${data.productName}
-Price: ${data.price}`,
-
-{
-reply_markup: {
-inline_keyboard: [
-[
-{ text: "✅ Approve", callback_data: `order_success_${orderId}` },
-{ text: "❌ Reject", callback_data: `order_reject_${orderId}` }
-]
-]
-}
-}
-);
-
-    }
-
-  });
-
-});
-
-
-// ---------- DEPOSIT DETECT ----------
-db.collection("deposits")
-.where("status", "==", "pending")
-.onSnapshot((snapshot) => {
-
-  snapshot.docChanges().forEach(async (change) => {
-
-    if (change.type === "added") {
-
-      const data = change.doc.data();
-      const depId = change.doc.id;
-
-      bot.sendMessage(
-        ADMIN_CHAT_ID,
-`💰 NEW DEPOSIT
-
-Amount: ${data.amount}
-Method: ${data.method}
-TrxID: ${data.trxId}`,
-
-{
-reply_markup: {
-inline_keyboard: [
-[
-{ text: "✅ Approve", callback_data: `deposit_success_${depId}` },
-{ text: "❌ Reject", callback_data: `deposit_reject_${depId}` }
-]
-]
-}
-}
-);
-
-    }
-
-  });
-
-});
-
-
-// ---------- BUTTON HANDLE ----------
-bot.on("callback_query", async (query) => {
-
-  const data = query.data;
-  const chatId = query.message.chat.id;
-
-
-  // ORDER APPROVE
-  if (data.startsWith("order_success")) {
-
-    const orderId = data.split("_")[2];
-
-    await db.collection("orders").doc(orderId).update({
-      status: "success"
-    });
-
-    bot.sendMessage(chatId, "✅ Order Approved");
-
-  }
-
-
-  // ORDER REJECT + REFUND
-  if (data.startsWith("order_reject")) {
-
-    const orderId = data.split("_")[2];
-
-    const orderDoc = await db.collection("orders").doc(orderId).get();
-    const orderData = orderDoc.data();
-
-    // refund balance
-    await db.collection("users").doc(orderData.userId).update({
-      balance: admin.firestore.FieldValue.increment(orderData.price)
-    });
-
-    await db.collection("orders").doc(orderId).update({
-      status: "rejected"
-    });
-
-    bot.sendMessage(chatId, "❌ Order Rejected & Refunded");
-
-  }
-
-
-  // DEPOSIT APPROVE
-  if (data.startsWith("deposit_success")) {
-
-    const depId = data.split("_")[2];
-
-    const depDoc = await db.collection("deposits").doc(depId).get();
-    const depData = depDoc.data();
-
-    await db.collection("users").doc(depData.userId).update({
-      balance: admin.firestore.FieldValue.increment(depData.amount)
-    });
-
-    await db.collection("deposits").doc(depId).update({
-      status: "approved"
-    });
-
-    bot.sendMessage(chatId, "💰 Deposit Approved");
-
-  }
-
-
-  // DEPOSIT REJECT
-  if (data.startsWith("deposit_reject")) {
-
-    const depId = data.split("_")[2];
-
-    await db.collection("deposits").doc(depId).update({
-      status: "rejected"
-    });
-
-    bot.sendMessage(chatId, "❌ Deposit Rejected");
-
-  }
-
-});Player ID: ${data.playerId}
 Product: ${data.productName}
 Price: ${data.price}`,
 
@@ -190,7 +52,8 @@ inline_keyboard:[
 ]
 ]
 }
-});
+}
+);
 
 }
 
@@ -199,7 +62,7 @@ inline_keyboard:[
 });
 
 
-// ---------- DEPOSIT DETECT ----------
+// ================= DEPOSIT DETECT =================
 db.collection("deposits")
 .where("status","==","pending")
 .onSnapshot((snapshot)=>{
@@ -211,7 +74,8 @@ if(change.type==="added"){
 const data = change.doc.data();
 const depId = change.doc.id;
 
-bot.sendMessage(ADMIN_CHAT_ID,
+bot.sendMessage(
+ADMIN_CHAT_ID,
 
 `💰 NEW DEPOSIT
 
@@ -228,7 +92,8 @@ inline_keyboard:[
 ]
 ]
 }
-});
+}
+);
 
 }
 
@@ -237,15 +102,14 @@ inline_keyboard:[
 });
 
 
-
-// ---------- BUTTON HANDLE ----------
+// ================= BUTTON HANDLE =================
 bot.on("callback_query", async (query)=>{
 
 const data = query.data;
 const chatId = query.message.chat.id;
 
 
-// ORDER APPROVE
+// ---------- ORDER APPROVE ----------
 if(data.startsWith("order_success")){
 
 const orderId = data.split("_")[2];
@@ -259,7 +123,7 @@ bot.sendMessage(chatId,"✅ Order Approved");
 }
 
 
-// ORDER REJECT + REFUND
+// ---------- ORDER REJECT + REFUND ----------
 if(data.startsWith("order_reject")){
 
 const orderId = data.split("_")[2];
@@ -272,7 +136,6 @@ await db.collection("users").doc(orderData.userId).update({
 balance: admin.firestore.FieldValue.increment(orderData.price)
 });
 
-// update order status
 await db.collection("orders").doc(orderId).update({
 status:"rejected"
 });
@@ -282,7 +145,7 @@ bot.sendMessage(chatId,"❌ Order Rejected & Refunded");
 }
 
 
-// DEPOSIT APPROVE
+// ---------- DEPOSIT APPROVE ----------
 if(data.startsWith("deposit_success")){
 
 const depId = data.split("_")[2];
@@ -303,7 +166,7 @@ bot.sendMessage(chatId,"💰 Deposit Approved");
 }
 
 
-// DEPOSIT REJECT
+// ---------- DEPOSIT REJECT ----------
 if(data.startsWith("deposit_reject")){
 
 const depId = data.split("_")[2];
@@ -316,145 +179,4 @@ bot.sendMessage(chatId,"❌ Deposit Rejected");
 
 }
 
-});    await db.collection("orders").doc(orderId).update({
-      status: "success"
-    });
-
-    bot.sendMessage(chatId, "✅ Order Approved");
-  }
-
-
-  // ---------- ORDER REJECT ----------
-  if (data.startsWith("order_reject")) {
-
-    const orderId = data.split("_")[2];
-
-    await db.collection("orders").doc(orderId).update({
-      status: "rejected"
-    });
-
-    bot.sendMessage(chatId, "❌ Order Rejected");
-  }
-
-
-  // ---------- DEPOSIT APPROVE ----------
-  if (data.startsWith("deposit_success")) {
-
-    const depositId = data.split("_")[2];
-
-    const depDoc = await db.collection("deposits").doc(depositId).get();
-    const depData = depDoc.data();
-
-    await db.collection("users").doc(depData.userId).update({
-      balance: admin.firestore.FieldValue.increment(depData.amount)
-    });
-
-    await db.collection("deposits").doc(depositId).update({
-      status: "approved"
-    });
-
-    bot.sendMessage(chatId, "💰 Deposit Approved");
-  }
-
-
-  // ---------- DEPOSIT REJECT ----------
-  if (data.startsWith("deposit_reject")) {
-
-    const depositId = data.split("_")[2];
-
-    await db.collection("deposits").doc(depositId).update({
-      status: "rejected"
-    });
-
-    bot.sendMessage(chatId, "❌ Deposit Rejected");
-  }
-
 });
-
-
-
-// ---------- SEND ORDER ----------
-async function sendOrder(orderId, price, userId) {
-
-  bot.sendMessage(ADMIN_CHAT_ID,
-
-`📦 NEW ORDER
-
-Order ID: ${orderId}
-User: ${userId}
-Price: ${price}`,
-
-{
-reply_markup:{
-inline_keyboard:[
-[
-{ text:"✅ Approve", callback_data:`order_success_${orderId}` },
-{ text:"❌ Reject", callback_data:`order_reject_${orderId}` }
-]
-]
-}
-});
-
-}
-
-
-// ---------- SEND DEPOSIT ----------
-async function sendDeposit(depositId, amount, userId) {
-
-  bot.sendMessage(ADMIN_CHAT_ID,
-
-`💰 NEW DEPOSIT REQUEST
-
-Deposit ID: ${depositId}
-User: ${userId}
-Amount: ${amount}`,
-
-{
-reply_markup:{
-inline_keyboard:[
-[
-{ text:"✅ Approve", callback_data:`deposit_success_${depositId}` },
-{ text:"❌ Reject", callback_data:`deposit_reject_${depositId}` }
-]
-]
-}
-});
-
-}  }
-
-});
-
-
-// function: app থেকে order পাঠানো
-function sendOrder(orderId, amount, userId, chatId) {
-
-  bot.sendMessage(chatId,
-
-`📦 New Order
-
-Order ID: ${orderId}
-User ID: ${userId}
-Amount: ${amount}
-
-Approve or Reject?`,
-
-{
-reply_markup: {
-inline_keyboard: [
-[
-{ text: "✅ Approve", callback_data: `approve_${orderId}` },
-{ text: "❌ Reject", callback_data: `reject_${orderId}` }
-]
-]
-}
-});
-
-}
-
-
-// test order (৫ সেকেন্ড পরে পাঠাবে)
-setTimeout(() => {
-
-sendOrder("12345","100","USER001","6807603208");
-
-},5000);
