@@ -2,10 +2,10 @@ const TelegramBot = require("node-telegram-bot-api");
 const admin = require("firebase-admin");
 
 // Telegram bot token
-const token = "YOUR_BOT_TOKEN";
+const token = "8373169221:AAF-S1LiNMD4WLplJPj0d5BNSYaXBlzD9uA";
 
 // Admin chat id
-const ADMIN_CHAT_ID = "YOUR_ADMIN_CHAT_ID";
+const ADMIN_CHAT_ID = "6807603208";
 
 // Firebase key
 const serviceAccount = require("./serviceAccountKey.json");
